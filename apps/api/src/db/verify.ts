@@ -125,18 +125,13 @@ const INTEGRITY_CHECKS: readonly Check[] = [
     expectEmpty: true,
   },
   {
-    label: 'mechanics marked on_job are exactly those on a live job today',
-    params: [env.APP_TIMEZONE],
-    sql: `WITH day_window AS (
-            SELECT date_trunc('day', NOW() AT TIME ZONE $1) AT TIME ZONE $1 AS day_start,
-                   (date_trunc('day', NOW() AT TIME ZONE $1) + INTERVAL '1 day')
-                     AT TIME ZONE $1 AS day_end
-          ), live AS (
-            SELECT DISTINCT b.mechanic_id AS id
-            FROM bookings b, day_window w
-            WHERE b.mechanic_id IS NOT NULL
-              AND b.status IN ('on_the_way', 'in_progress')
-              AND b.scheduled_at >= w.day_start AND b.scheduled_at < w.day_end
+    // The same rule the live service applies, so a simulated status change can
+    // never put the data into a state this check calls broken.
+    label: 'mechanics marked on_job are exactly those on a live job',
+    sql: `WITH live AS (
+            SELECT DISTINCT mechanic_id AS id
+            FROM bookings
+            WHERE mechanic_id IS NOT NULL AND status IN ('on_the_way', 'in_progress')
           )
           SELECT id FROM live
           EXCEPT SELECT id FROM mechanics WHERE status = 'on_job'
