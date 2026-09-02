@@ -3,8 +3,10 @@ import { z } from 'zod';
 import { BOOKING_STATUSES } from '@instant-mechanic/shared';
 import { asyncHandler } from '../lib/async-handler.js';
 import { parseIdParam, parseQuery } from '../middleware/validate.js';
+import { ApiError } from '../lib/errors.js';
 import { BOOKING_SORT_KEYS } from '../db/queries/bookings.js';
 import { getBookingById, listBookings } from '../services/booking-service.js';
+import { changeBookingStatus } from '../services/booking-status-service.js';
 import {
   csvEnum,
   dateSchema,
@@ -73,6 +75,53 @@ bookingsRouter.get(
         sortOrder: q.sortOrder,
       })
     );
+  })
+);
+
+const statusBodySchema = z.object({
+  status: z.enum(BOOKING_STATUSES),
+  reason: z.string().trim().min(1).max(200).optional(),
+});
+
+/**
+ * PATCH /api/bookings/:id/status
+ *
+ * The one write endpoint. It moves a booking one legal step along the
+ * lifecycle, records the transition in booking_status_history, keeps the
+ * mechanic's availability in step, and pushes the change to every connected
+ * dashboard over the WebSocket.
+ *
+ * PATCH rather than POST because it modifies part of an existing booking rather
+ * than creating anything. An illegal move (say, completed -> pending) is a 409,
+ * not a 400: the request is well formed, the state just does not allow it.
+ *
+ * NOTE: this route is unauthenticated, because authentication is a bonus item
+ * that is not built. In a real deployment it would sit behind an operations
+ * role.
+ */
+bookingsRouter.patch(
+  '/bookings/:id/status',
+  asyncHandler(async (req, res) => {
+    const id = parseIdParam(req);
+    const parsed = statusBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw ApiError.validation(
+        parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.') || 'body',
+          message: issue.message,
+        })),
+        'request body fields'
+      );
+    }
+
+    const event = await changeBookingStatus({
+      bookingId: id,
+      toStatus: parsed.data.status,
+      changedBy: 'ops-dashboard',
+      reason: parsed.data.reason,
+    });
+
+    res.json({ data: event });
   })
 );
 
