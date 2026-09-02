@@ -24,7 +24,11 @@ services:
     # Built from the repository root: this is an npm workspaces monorepo, and
     # the API depends on @instant-mechanic/shared, which must be compiled first.
     rootDir: .
-    buildCommand: npm ci && npm run build --workspace @instant-mechanic/shared && npm run build --workspace @instant-mechanic/api
+    # --include=dev is required, not optional. NODE_ENV=production is set below,
+    # and npm honours it by skipping devDependencies — which is where TypeScript
+    # lives. Without this the build dies on "tsc: command not found" before it
+    # compiles anything.
+    buildCommand: npm ci --include=dev && npm run build --workspace @instant-mechanic/shared && npm run build --workspace @instant-mechanic/api
     startCommand: node apps/api/dist/server.js
 
     # Hits the database, so a container that is up but cannot serve is reported
