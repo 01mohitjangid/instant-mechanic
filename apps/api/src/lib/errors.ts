@@ -31,7 +31,10 @@ export class ApiError extends Error {
     return new ApiError(404, 'NOT_FOUND', `${resource} ${id} was not found`);
   }
 
-  static validation(details: { path: string; message: string }[]): ApiError {
-    return new ApiError(422, 'VALIDATION_FAILED', 'Some query parameters are invalid', details);
+  static validation(
+    details: { path: string; message: string }[],
+    subject = 'query parameters'
+  ): ApiError {
+    return new ApiError(422, 'VALIDATION_FAILED', `Some ${subject} are invalid`, details);
   }
 }
