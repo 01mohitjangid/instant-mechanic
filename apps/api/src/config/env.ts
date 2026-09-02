@@ -44,6 +44,17 @@ const envSchema = z.object({
    * to 1 only where something like an AWS load balancer really is in front.
    */
   TRUST_PROXY: z.string().default('false'),
+  /**
+   * Whether to run the booking simulator.
+   *
+   * Nobody is actually driving to a customer, so without this the live
+   * dashboard has nothing to show. It walks real bookings along the real
+   * lifecycle through the same service the API uses — it does not fake events.
+   * Turn it off in any environment where the data must stay still.
+   */
+  SIMULATOR_ENABLED: z.enum(['true', 'false']).default('true'),
+  /** Milliseconds between simulated status changes. */
+  SIMULATOR_INTERVAL_MS: z.coerce.number().int().min(1000).max(600_000).default(6000),
 });
 
 const parsed = envSchema.safeParse({
@@ -56,6 +67,8 @@ const parsed = envSchema.safeParse({
   RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW_MINUTES: process.env.RATE_LIMIT_WINDOW_MINUTES,
   TRUST_PROXY: process.env.TRUST_PROXY,
+  SIMULATOR_ENABLED: process.env.SIMULATOR_ENABLED,
+  SIMULATOR_INTERVAL_MS: process.env.SIMULATOR_INTERVAL_MS,
 });
 
 if (!parsed.success) {
@@ -70,6 +83,8 @@ if (!parsed.success) {
 export const env = parsed.data;
 
 export const isProduction = env.NODE_ENV === 'production';
+
+export const simulatorEnabled = env.SIMULATOR_ENABLED === 'true';
 
 /** `false` | `true` | a hop count. Anything unrecognised falls back to `false`. */
 export const trustProxy: boolean | number = (() => {
