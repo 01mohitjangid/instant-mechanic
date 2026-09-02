@@ -1,8 +1,17 @@
 import { Router } from 'express';
 import { asyncHandler } from '../lib/async-handler.js';
 import { getHealth } from '../services/health-service.js';
+import { apiIndex } from './index.js';
 
 export const healthRouter: Router = Router();
+
+/**
+ * The bare root. Whoever opens the backend URL — a reviewer, a teammate, future
+ * me — should see what this service is, not a 404.
+ */
+healthRouter.get('/', (_req, res) => {
+  res.json({ data: apiIndex });
+});
 
 /**
  * Liveness plus a real database round trip.
