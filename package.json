@@ -22,13 +22,16 @@
     "db:verify": "npm run db:verify --workspace @instant-mechanic/api",
     "db:reset": "npm run db:reset --workspace @instant-mechanic/api",
     "dev:api": "npm run dev --workspace @instant-mechanic/api",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "dev:web": "npm run dev --workspace @instant-mechanic/web",
+    "dev": "npm run dev:api & npm run dev:web"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.4.0",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "prettier": "^3.9.6",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
