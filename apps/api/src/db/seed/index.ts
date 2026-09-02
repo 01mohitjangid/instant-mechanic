@@ -771,29 +771,20 @@ async function seed(): Promise<void> {
     // A mechanic is "on_job" only while a job is actually running today.
     // Being assigned to next Tuesday's booking does not make someone busy now,
     // so that case is deliberately excluded.
-    // The day window is computed in APP_TIMEZONE and left as a half-open range:
-    // scheduled_at::date = CURRENT_DATE would resolve "today" in the database
-    // session's zone (UTC on Neon) and would ignore idx_bookings_scheduled_at.
-    const busy = await client.query(
-      `
-      WITH day_window AS (
-        SELECT date_trunc('day', NOW() AT TIME ZONE $1) AT TIME ZONE $1 AS day_start,
-               (date_trunc('day', NOW() AT TIME ZONE $1) + INTERVAL '1 day')
-                 AT TIME ZONE $1 AS day_end
-      )
+    // "on_job" means the mechanic has a live booking — exactly the rule
+    // refreshMechanicAvailability() applies at runtime. Adding a "today" filter
+    // here would make the seed disagree with the live service the first time
+    // the simulator advanced a job scheduled just before midnight.
+    const busy = await client.query(`
       UPDATE mechanics
       SET status = 'on_job'
       WHERE id IN (
         SELECT DISTINCT b.mechanic_id
-        FROM bookings b, day_window w
+        FROM bookings b
         WHERE b.mechanic_id IS NOT NULL
           AND b.status IN ('on_the_way', 'in_progress')
-          AND b.scheduled_at >= w.day_start
-          AND b.scheduled_at <  w.day_end
       )
-      `,
-      [env.APP_TIMEZONE]
-    );
+    `);
     console.log(`  mechanics marked on_job: ${busy.rowCount}`);
   });
 

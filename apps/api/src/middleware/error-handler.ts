@@ -41,6 +41,24 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
     return;
   }
 
+  // express.json() rejects a malformed or oversized body with a plain Error
+  // carrying an HTTP status. Without this it fell through to the bare 500 and
+  // the client was told the server had broken, not their request.
+  const status = (error as { status?: number; statusCode?: number } | null)?.status;
+  if (typeof status === 'number' && status >= 400 && status < 500) {
+    const body: ApiErrorResponse = {
+      error: {
+        code: status === 413 ? 'PAYLOAD_TOO_LARGE' : 'MALFORMED_BODY',
+        message:
+          status === 413
+            ? 'The request body is too large'
+            : 'The request body could not be parsed as JSON',
+      },
+    };
+    res.status(status).json(body);
+    return;
+  }
+
   const message = error instanceof Error ? error.message : String(error);
   console.error(`[api] unhandled error on ${req.method} ${req.originalUrl}:`, error);
 

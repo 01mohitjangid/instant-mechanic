@@ -35,11 +35,15 @@ export function createApp(): Express {
   app.use(
     cors({
       origin: corsOrigins,
-      methods: ['GET', 'OPTIONS'],
+      // PATCH is here for the one write route, /api/bookings/:id/status.
+      methods: ['GET', 'PATCH', 'OPTIONS'],
       maxAge: 86400,
     })
   );
   app.use(compression());
+  // Small on purpose: the only body this API accepts is a status change, and an
+  // unbounded body on a public endpoint is a free denial-of-service.
+  app.use(express.json({ limit: '16kb' }));
   app.use(requestLogger);
 
   app.use(
