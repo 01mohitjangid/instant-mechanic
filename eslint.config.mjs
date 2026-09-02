@@ -12,6 +12,8 @@ export default tseslint.config(
       '**/build/**',
       '**/out/**',
       '**/.next/**',
+      // Vercel's local build output. Generated bundles, not source.
+      '**/.vercel/**',
       '**/next-env.d.ts',
     ],
   },
