@@ -8,6 +8,14 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+/** Strip surrounding single or double quotes, and any padding around them. */
+function unquote(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return trimmed;
+  const quoted = /^(['"])(.*)\1$/s.exec(trimmed);
+  return quoted ? (quoted[2] as string).trim() : trimmed;
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z
@@ -59,8 +67,11 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
-  // Trim, because a pasted connection string often carries stray whitespace.
-  DATABASE_URL: process.env.DATABASE_URL?.trim(),
+  // Trimmed, and stripped of wrapping quotes. A pasted connection string often
+  // carries stray whitespace, and `docker run --env-file` passes the quotes in
+  // a .env file through literally — so DATABASE_URL="postgres://…" arrives with
+  // the quotes still attached and fails as an invalid connection string.
+  DATABASE_URL: unquote(process.env.DATABASE_URL),
   PORT: process.env.PORT,
   APP_TIMEZONE: process.env.APP_TIMEZONE,
   CORS_ORIGINS: process.env.CORS_ORIGINS,

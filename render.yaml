@@ -1,0 +1,69 @@
+# ---------------------------------------------------------------------------
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Render reads this file from the repository, so every setting below is version
+# controlled and reviewable instead of being clicked into a dashboard and
+# forgotten.
+#
+# One value is deliberately NOT here: DATABASE_URL. It carries the database
+# password, and this repository is public. `sync: false` tells Render to prompt
+# for it once in its own dashboard, where it stays out of the source.
+#
+# Config lives in the repo. Secrets live in the platform.
+# ---------------------------------------------------------------------------
+services:
+  - type: web
+    name: instant-mechanic-api
+    runtime: node
+    plan: free
+    # Ohio matches the Neon database's own us-east-2 region. Every dashboard
+    # request makes several database round trips, so keeping the API next to
+    # the database matters far more than keeping it next to the browser.
+    region: ohio
+
+    # Built from the repository root: this is an npm workspaces monorepo, and
+    # the API depends on @instant-mechanic/shared, which must be compiled first.
+    rootDir: .
+    buildCommand: npm ci && npm run build --workspace @instant-mechanic/shared && npm run build --workspace @instant-mechanic/api
+    startCommand: node apps/api/dist/server.js
+
+    # Hits the database, so a container that is up but cannot serve is reported
+    # as unhealthy rather than being sent traffic.
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # "Today's bookings" is resolved in the operations team's timezone, not
+      # the server's. Render runs in UTC, so without this every daily figure
+      # would roll over at 5:30am India time.
+      - key: APP_TIMEZONE
+        value: Asia/Kolkata
+
+      # Render terminates TLS at its own proxy, so the real client IP arrives in
+      # X-Forwarded-For. Without this the rate limiter would treat the entire
+      # internet as one visitor.
+      - key: TRUST_PROXY
+        value: '1'
+
+      # Tighten this to the Vercel URL once the dashboard is deployed. Left open
+      # only so the API is reachable before the frontend exists.
+      - key: CORS_ORIGINS
+        value: '*'
+
+      # Walks real bookings along the real lifecycle so the live dashboard has
+      # something to show. Set to false to freeze the data.
+      - key: SIMULATOR_ENABLED
+        value: 'true'
+      - key: SIMULATOR_INTERVAL_MS
+        value: '6000'
+
+      - key: RATE_LIMIT_MAX
+        value: '300'
+      - key: RATE_LIMIT_WINDOW_MINUTES
+        value: '1'
+
+      # Prompted for once in the Render dashboard. Never committed.
+      - key: DATABASE_URL
+        sync: false

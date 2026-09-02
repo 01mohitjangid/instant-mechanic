@@ -1,0 +1,21 @@
+# Anything the image should never contain, and anything that would only slow
+# the build down by invalidating layers.
+node_modules
+**/node_modules
+dist
+**/dist
+.next
+**/.next
+
+# Secrets. The image takes its configuration from the environment at runtime.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.claude
+*.log
+coverage
+.DS_Store
+README.md
