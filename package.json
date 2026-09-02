@@ -24,7 +24,8 @@
     "dev:api": "npm run dev --workspace @instant-mechanic/api",
     "build": "npm run build --workspaces --if-present",
     "dev:web": "npm run dev --workspace @instant-mechanic/web",
-    "dev": "npm run dev:api & npm run dev:web"
+    "dev": "npm run dev:api & npm run dev:web",
+    "deploy:web": "vercel build --prod && vercel deploy --prebuilt --prod"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
