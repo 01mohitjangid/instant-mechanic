@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
@@ -38,8 +39,19 @@ export default tseslint.config(
       // middleware.
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
-      eqeqeq: ['error', 'always'],
+      // `x == null` is the deliberate idiom for "null or undefined" and is the
+      // one loose comparison worth keeping; everything else must be strict.
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
       'no-console': 'off',
+    },
+  },
+  {
+    // React rules apply only to the dashboard workspace; the API has no JSX.
+    files: ['apps/web/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
   prettier
