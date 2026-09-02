@@ -7,7 +7,6 @@ A live operations dashboard for a vehicle service company. An operations team us
 | **Live dashboard** | https://instant-mechanic-steel.vercel.app                                                        |
 | **Live API**       | https://instant-mechanic-api-sazm.onrender.com                                                   |
 | **API docs**       | [This README](#api) · live index at [`/api`](https://instant-mechanic-api-sazm.onrender.com/api) |
-| **Repository**     | https://github.com/01mohitjangid/instant-mechanic                                                |
 
 Built by **Mohit Jangid**.
 
