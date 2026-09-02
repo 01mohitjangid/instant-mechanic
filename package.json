@@ -1,0 +1,37 @@
+{
+  "name": "instant-mechanic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Live Vehicle Service Operations Dashboard \u2014 monorepo root",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build:shared": "npm run build --workspace @instant-mechanic/shared",
+    "db:migrate": "npm run db:migrate --workspace @instant-mechanic/api",
+    "db:seed": "npm run db:seed --workspace @instant-mechanic/api",
+    "db:verify": "npm run db:verify --workspace @instant-mechanic/api",
+    "db:reset": "npm run db:reset --workspace @instant-mechanic/api",
+    "dev:api": "npm run dev --workspace @instant-mechanic/api",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.4.0",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@instant-mechanic/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Express API and PostgreSQL database for the Instant Mechanic dashboard",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:reset": "tsx src/db/migrate.ts --reset",
+    "db:seed": "tsx src/db/seed/index.ts",
+    "db:verify": "tsx src/db/verify.ts",
+    "db:reset": "npm run db:migrate:reset && npm run db:seed && npm run db:verify"
+  },
+  "dependencies": {
+    "@instant-mechanic/shared": "*",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.4.0",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3"
+  }
+}
