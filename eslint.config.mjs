@@ -46,6 +46,15 @@ export default tseslint.config(
     },
   },
   {
+    // PM2 and other Node tooling still expect CommonJS, so `module.exports`
+    // here is correct rather than a mistake. Nothing else in the repo is CJS.
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: { module: 'writable', require: 'readonly', __dirname: 'readonly' },
+    },
+  },
+  {
     // React rules apply only to the dashboard workspace; the API has no JSX.
     files: ['apps/web/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
