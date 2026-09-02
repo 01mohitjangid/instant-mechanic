@@ -29,3 +29,6 @@ yarn-error.log*
 # test / cache
 coverage/
 .eslintcache
+
+# typescript incremental build cache
+*.tsbuildinfo
