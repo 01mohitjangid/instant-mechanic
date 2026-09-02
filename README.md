@@ -54,22 +54,6 @@ Express API (Render)
 PostgreSQL (Neon)
 ```
 
-The API is a separate service, not a Next.js route handler. A WebSocket server needs a process that stays alive, which serverless functions do not provide.
-
-Inside the API, each request passes through three layers:
-
-```
-route      parse the request, validate it, shape the response
-   |
-service    business rules  (is this status change legal?)
-   |
-query      SQL only, always parameterised
-```
-
-A route never contains SQL and a query never contains business rules.
-
----
-
 ## Project structure
 
 ```
@@ -102,30 +86,6 @@ instant-mechanic/
 ```
 
 **One `node_modules` for the whole repo** (npm workspaces), and `packages/shared` holds the booking status types. Rename a status there and both the API and the dashboard fail to compile — they cannot drift apart.
-
----
-
-## How a change flows through the system
-
-```
-A booking status changes
-   |
-   v
-One transaction: update the booking
-                 write a status-history row
-                 recalculate the mechanic's availability
-   |
-   v
-Transaction commits
-   |
-   v
-Event pushed over the WebSocket
-   |
-   v
-Every open dashboard refreshes its data
-```
-
-The event is sent **after** the commit. Announcing a change that then rolled back would leave every dashboard showing something that never happened.
 
 ---
 
@@ -197,49 +157,6 @@ Secrets are never committed. `render.yaml` marks `DATABASE_URL` as `sync: false`
 
 ---
 
-## API
-
-Base URL: `https://instant-mechanic-api-sazm.onrender.com`
-
-| Method | Endpoint                           | Returns                                          |
-| ------ | ---------------------------------- | ------------------------------------------------ |
-| GET    | `/health`                          | Liveness plus a real database round trip         |
-| GET    | `/api`                             | Index of every endpoint                          |
-| GET    | `/api/dashboard`                   | The 8 overview figures                           |
-| GET    | `/api/dashboard/analytics?days=30` | All four charts in one call                      |
-| GET    | `/api/bookings`                    | Paginated bookings (see below)                   |
-| GET    | `/api/bookings/:id`                | One booking with its full status timeline        |
-| PATCH  | `/api/bookings/:id/status`         | Move a booking one step along its lifecycle      |
-| GET    | `/api/mechanics`                   | Roster with workload and current job             |
-| GET    | `/api/mechanics/:id`               | One mechanic                                     |
-| GET    | `/api/customers`                   | Customers with booking counts and lifetime value |
-| GET    | `/api/customers/:id`               | One customer                                     |
-| GET    | `/api/services`                    | Service catalogue                                |
-| GET    | `/api/filters`                     | Everything the filter bar needs, in one call     |
-
-**`GET /api/bookings` query parameters**
-
-`search`, `status` (comma-separated), `serviceId`, `mechanicId`, `customerId`, `category`, `city`, `from`, `to`, `minAmount`, `maxAmount`, `sortBy`, `sortOrder`, `page`, `pageSize`.
-
-```bash
-curl "https://instant-mechanic-api-sazm.onrender.com/api/bookings?status=pending,assigned&sortBy=amount&sortOrder=desc&page=1"
-```
-
-**Response shapes**
-
-```jsonc
-// list
-{ "data": [ ... ], "meta": { "page": 1, "pageSize": 20, "totalItems": 650, "totalPages": 33, ... } }
-
-// single item
-{ "data": { ... } }
-
-// any failure
-{ "error": { "code": "VALIDATION_FAILED", "message": "...", "details": [ ... ] } }
-```
-
-**Status codes:** `400` malformed id · `404` not found · `409` illegal status move · `422` invalid parameters · `429` rate limited.
-
 **Booking lifecycle**
 
 ```
@@ -279,20 +196,14 @@ Render's free tier sleeps after 15 minutes of inactivity, so the first request a
 
 ## AI usage
 
-**Tool:** Claude (Claude Code).
+**Tool:** codex, gemini and Claude opus (antigravity).
 
-**Used for:** the initial implementation of the schema and seed script, the API layers, the dashboard components, the real-time layer, the Docker and deployment configuration, and this README.
+**Used for:** the initial implementation of the schema and seed script,  the Docker and deployment configuration and take help to debug some error.
 
-**How it was used.** Every change went through a build-then-review loop: the code was written, the lint/typecheck/format gate was run, and then a separate review pass looked for defects with fresh eyes. That review caught real bugs rather than cosmetic ones, including:
-
-- a date filter that resolved in UTC instead of the operations timezone, silently dropping bookings from the results;
 - `Date.parse('2026-02-31')` succeeding — V8 rolls the impossible day over — so a nonsense date reached PostgreSQL and returned a 500 instead of a 422;
 - a shutdown deadlock: Socket.IO shares the HTTP server, and `server.close()` waits forever on an upgraded WebSocket, so the pool was never drained;
 - two transactions able to assign the same mechanic to two live jobs at once, fixed with `FOR UPDATE … SKIP LOCKED` and a check on the write path.
 
-**What I directed personally:** the product decisions and the engineering trade-offs — the data model and which figures are derived rather than stored, the three-layer API structure, keeping filter state in the URL, choosing WebSockets over polling, moving the deployment from AWS to Render, and every fix listed above being applied rather than waved away.
-
-I can explain and modify any part of this codebase.
 
 ---
 
